@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const TrackedProduct = require('../models/TrackedProduct');
+const auth = require('../core/middleware/authMiddleware');
 
-router.post("/", async (req, res) => {
+router.post("/", auth("user"), async (req, res) => {
     try {
         const product = new TrackedProduct(req.body);
         await product.save();
@@ -12,8 +13,15 @@ router.post("/", async (req, res) => {
     }
 });
 
-router.get("/", async (req, res) => {
-    const products = await TrackedProduct.find().populate('user_id');
+router.get("/", auth(), async (req, res) => {
+    let products;
+
+    if (req.role === "admin") {
+        products = await TrackedProduct.find().populate("user_id");
+    } else {
+        products = await TrackedProduct.find({ user_id: req.user._id }).populate("user_id");
+    }
+
     res.json(products);
 });
 
