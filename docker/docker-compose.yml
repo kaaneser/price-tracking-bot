@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:6
+    container_name: price-tracker-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: price_tracker_db
+
+volumes:
+  mongo_data:
