@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const ResponseHelper = require('../core/responseHelper');
 const router = express.Router();
 
 router.post("/login", async (req, res) => {
@@ -9,14 +10,14 @@ router.post("/login", async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        return ResponseHelper.auth.userNotFound(res);
     }
 
     if (user.role !== "admin") {
         const isMatch = await user.isPasswordValid(password);
 
         if (!isMatch) {
-            return res.status(400).json({ message: "Invalid credentials" });
+            return ResponseHelper.auth.invalidCredentials(res);
         }
     }
 
@@ -26,9 +27,7 @@ router.post("/login", async (req, res) => {
         { expiresIn: "1h" }
     );
 
-    res.status(200).json({
-        token: token
-    });
+    return ResponseHelper.auth.loginSuccess(res, token);
 });
 
 router.post("/register", async (req, res) => {
@@ -37,7 +36,7 @@ router.post("/register", async (req, res) => {
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
-        return res.status(400).json({ message: "User already exists" });
+        return ResponseHelper.auth.emailExists(res);
     }
 
     const user = new User({
@@ -57,13 +56,11 @@ router.post("/register", async (req, res) => {
             { expiresIn: "1h" }
         );
 
-        res.status(201).json({ token: token });
+        return ResponseHelper.auth.registerSuccess(res, token);
     } catch (err) {
         console.error(err);
         
-        res.status(500).json({
-            message: "Server error"
-        });
+        return ResponseHelper.auth.registerError(res, err.message);
     }
 });
 
